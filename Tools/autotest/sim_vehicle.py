@@ -12,6 +12,7 @@ AP_FLAKE8_CLEAN
 
 import atexit
 import datetime
+
 import errno
 import optparse
 import os
@@ -29,7 +30,6 @@ import math
 
 from pysim import util
 from pysim import vehicleinfo
-
 
 # List of open terminal windows for macosx
 windowID = []
@@ -49,6 +49,7 @@ os.environ["SIM_VEHICLE_SESSION"] = binascii.hexlify(os.urandom(8)).decode()
 class CompatError(Exception):
     """A custom exception class to hold state if we encounter the parse
     error we are looking for"""
+
     def __init__(self, error, opts, rargs):
         Exception.__init__(self, error)
         self.opts = opts
@@ -86,22 +87,19 @@ class CompatOptionParser(optparse.OptionParser):
             opt_width = self.help_position - self.current_indent - 2
             if len(opts) > opt_width:
                 opts = "%*s%s\n" % (self.current_indent, "", opts)
-            else:                       # start help on same line as opts
+            else:  # start help on same line as opts
                 opts = "%*s%-*s  " % (self.current_indent, "", opt_width, opts)
             result.append(opts)
             if option.help:
                 help_text = self.expand_default(option)
-                tw = textwrap.TextWrapper(replace_whitespace=False,
-                                          initial_indent="",
-                                          subsequent_indent="    ",
-                                          width=self.help_width)
+                tw = textwrap.TextWrapper(
+                    replace_whitespace=False, initial_indent="", subsequent_indent="    ", width=self.help_width
+                )
 
                 for line in help_text.split("\n"):
                     help_lines = tw.wrap(line)
                     for wline in help_lines:
-                        result.extend(["%*s%s\n" % (self.help_position,
-                                                    "",
-                                                    wline)])
+                        result.extend(["%*s%s\n" % (self.help_position, "", wline)])
             elif opts[-1] != "\n":
                 result.append("\n")
             return "".join(result)
@@ -113,10 +111,7 @@ class CompatOptionParser(optparse.OptionParser):
 
     def __init__(self, *args, **kwargs):
         formatter = CompatOptionParser.CustomFormatter()
-        optparse.OptionParser.__init__(self,
-                                       *args,
-                                       formatter=formatter,
-                                       **kwargs)
+        optparse.OptionParser.__init__(self, *args, formatter=formatter, **kwargs)
 
     def error(self, error):
         """Override default error handler called by
@@ -154,12 +149,10 @@ class CompatOptionParser(optparse.OptionParser):
 
 
 def cygwin_pidof(proc_name):
-    """ Thanks to kata198 for this:
+    """Thanks to kata198 for this:
     https://github.com/kata198/cygwin-ps-misc/blob/master/pidof
     """
-    pipe = subprocess.Popen("ps -ea | grep " + proc_name,
-                            shell=True,
-                            stdout=subprocess.PIPE)
+    pipe = subprocess.Popen("ps -ea | grep " + proc_name, shell=True, stdout=subprocess.PIPE)
     output_lines = pipe.stdout.read().decode('utf-8').replace("\r", "").split("\n")
     ret = pipe.wait()
     pids = []
@@ -196,6 +189,7 @@ def under_vagrant():
 
 def under_wsl2():
     import platform
+
     return 'microsoft-standard-WSL2' in platform.release()
 
 
@@ -203,9 +197,7 @@ def wsl2_host_ip():
     if not under_wsl2() or cmd_opts.no_wsl2_network:
         return None
 
-    pipe = subprocess.Popen("ip route show default | awk '{print $3}'",
-                            shell=True,
-                            stdout=subprocess.PIPE)
+    pipe = subprocess.Popen("ip route show default | awk '{print $3}'", shell=True, stdout=subprocess.PIPE)
     output_lines = pipe.stdout.read().decode('utf-8').strip(' \r\n')
     ret = pipe.wait()
 
@@ -224,16 +216,15 @@ def kill_tasks_cygwin(victims):
     """Shell out to ps -ea to find processes to kill"""
     for victim in list(victims):
         pids = cygwin_pidof(victim)
-#        progress("pids for (%s): %s" %
-#                 (victim,",".join([ str(p) for p in pids])))
+        #        progress("pids for (%s): %s" %
+        #                 (victim,",".join([ str(p) for p in pids])))
         for apid in pids:
             os.kill(apid, signal.SIGKILL)
 
 
 def kill_tasks_macos():
     for window in windowID:
-        cmd = ("osascript -e \'tell application \"Terminal\" to close "
-               "(window(get index of window id %s))\'" % window)
+        cmd = "osascript -e \'tell application \"Terminal\" to close " "(window(get index of window id %s))\'" % window
         os.system(cmd)
 
 
@@ -242,6 +233,7 @@ def kill_tasks_psutil(victims):
     not available on Windows, but when it is we should be able to *just*
     use this routine"""
     import psutil
+
     for proc in psutil.process_iter():
         pdict = proc.as_dict(attrs=['environ', 'status'])
         if pdict['status'] == psutil.STATUS_ZOMBIE:
@@ -260,6 +252,7 @@ def kill_tasks_pkill(victims):
 
 class BobException(Exception):
     """Handle Bob's Exceptions"""
+
     pass
 
 
@@ -269,6 +262,7 @@ def kill_tasks():
 
     if cmd_opts.coverage:
         import psutil
+
         for proc in psutil.process_iter(['pid', 'name', 'environ']):
             if proc.name() not in ["arducopter", "ardurover", "arduplane", "ardusub", "antennatracker"]:
                 # only kill vehicle that way
@@ -301,7 +295,7 @@ def kill_tasks():
             'scrimmage',
             'ardurover',
             'arduplane',
-            'arducopter'
+            'arducopter',
         }
         for vehicle in vinfo.options:
             for frame in vinfo.options[vehicle]["frames"]:
@@ -459,8 +453,7 @@ def do_build_parameters(vehicle):
     # build succeeded
     # now build parameters
     progress("Building fresh parameter descriptions")
-    param_parse_path = os.path.join(
-        autotest_dir, "param_metadata/param_parse.py")
+    param_parse_path = os.path.join(autotest_dir, "param_metadata/param_parse.py")
     cmd_param_build = ["python", param_parse_path, '--vehicle', vehicle]
 
     _, sts = run_cmd_blocking("Building fresh params", cmd_param_build)
@@ -475,12 +468,9 @@ def get_user_locations_path():
     not defined, we look in $HOME/.config/ardupilot/locations.txt.  If
     $HOME is not defined, we look in ./.config/ardupilot/locations.txt.'''
 
-    config_dir = os.environ.get(
-        'XDG_CONFIG_DIR',
-        os.path.join(os.environ.get('HOME', '.'), '.config'))
+    config_dir = os.environ.get('XDG_CONFIG_DIR', os.path.join(os.environ.get('HOME', '.'), '.config'))
 
-    user_locations_path = os.path.join(
-        config_dir, 'ardupilot', 'locations.txt')
+    user_locations_path = os.path.join(config_dir, 'ardupilot', 'locations.txt')
 
     return user_locations_path
 
@@ -526,6 +516,7 @@ def find_geocoder_location(locname):
     lat = j.lat
     lon = j.lng
     from MAVProxy.modules.mavproxy_map import srtm
+
     downloader = srtm.SRTMDownloader()
     downloader.loadFileList()
     start = time.time()
@@ -543,8 +534,7 @@ def find_geocoder_location(locname):
 
 def find_location_by_name(locname):
     """Search locations.txt for locname, return GPS coords"""
-    locations_userpath = os.environ.get('ARDUPILOT_LOCATIONS',
-                                        get_user_locations_path())
+    locations_userpath = os.environ.get('ARDUPILOT_LOCATIONS', get_user_locations_path())
     locations_filepath = os.path.join(autotest_dir, "locations.txt")
     comment_regex = re.compile(r"\s*#.*")
     for path in [locations_userpath, locations_filepath]:
@@ -575,7 +565,7 @@ def find_spawns(loc, offsets):
         if head is None:
             head = heading
         g = mavextra.gps_offset(lat, lon, x, y)
-        spawns[k] = ",".join([str(g[0]), str(g[1]), str(alt+z), str(head)])
+        spawns[k] = ",".join([str(g[0]), str(g[1]), str(alt + z), str(head)])
     return spawns
 
 
@@ -600,13 +590,18 @@ def run_cmd_blocking(what, cmd, quiet=False, check=False, **kw):
 
     _, sts = ret
     if check and sts != 0:
-        progress("(%s) exited with code %d" % (what, sts,))
+        progress(
+            "(%s) exited with code %d"
+            % (
+                what,
+                sts,
+            )
+        )
         sys.exit(1)
     return ret
 
 
 def run_in_terminal_window(name, cmd, **kw):
-
     """Execute the run_in_terminal_window.sh command for cmd"""
     runme = [os.path.join(autotest_dir, "run_in_terminal_window.sh"), name]
     runme.extend(cmd)
@@ -655,15 +650,17 @@ def start_antenna_tracker(opts):
     os.chdir(vehicledir)
     tracker_serial0 = "tcp:127.0.0.1:" + str(5760 + 10 * tracker_instance)
     binary_basedir = "build/sitl"
-    exe = os.path.join(root_dir,
-                       binary_basedir,
-                       "bin/antennatracker")
-    run_in_terminal_window("AntennaTracker",
-                           ["nice",
-                            exe,
-                            "-I" + str(tracker_instance),
-                            "--model=tracker",
-                            "--home=" + ",".join([str(x) for x in tracker_home])])
+    exe = os.path.join(root_dir, binary_basedir, "bin/antennatracker")
+    run_in_terminal_window(
+        "AntennaTracker",
+        [
+            "nice",
+            exe,
+            "-I" + str(tracker_instance),
+            "--model=tracker",
+            "--home=" + ",".join([str(x) for x in tracker_home]),
+        ],
+    )
     os.chdir(oldpwd)
 
 
@@ -803,8 +800,7 @@ def start_vehicle(binary, opts, stuff, spawns=None):
     if opts.add_param_file:
         for file in opts.add_param_file:
             if not os.path.isfile(file):
-                print("The parameter file (%s) does not exist" %
-                      (file,))
+                print("The parameter file (%s) does not exist" % (file,))
                 sys.exit(1)
 
             if path is not None:
@@ -841,7 +837,7 @@ def start_vehicle(binary, opts, stuff, spawns=None):
         if opts.mcast:
             c.extend(["--serial0", "mcast:"])
         elif opts.udp:
-            c.extend(["--serial0", "udpclient:127.0.0.1:" + str(5760+i*10)])
+            c.extend(["--serial0", "udpclient:127.0.0.1:" + str(5760 + i * 10)])
         if opts.auto_sysid:
             if opts.sysid is not None:
                 raise ValueError("Can't use auto-sysid and sysid together")
@@ -850,7 +846,7 @@ def start_vehicle(binary, opts, stuff, spawns=None):
             if sysid < 1 or sysid > 255:
                 raise ValueError("Invalid system id %d" % sysid)
             c.extend(["--sysid", str(sysid)])
-
+        # c.extend(["--serial1", "udp:127.0.0.1:" + str(14550 + i * 10)])
         os.chdir(i_dir)
         run_in_terminal_window(cmd_name, cmd + c)
     os.chdir(old_dir)
@@ -884,7 +880,8 @@ def start_mavproxy(opts, stuff):
 
     for i in instances:
         if not opts.no_extra_ports:
-            ports = [14550 + 10 * i,14551 + 10 * i]
+            print('hello both')
+            ports = [14550 + 10 * i, 14551 + 10 * i]
             for port in ports:
                 if under_vagrant():
                     # We're running inside of a vagrant guest; forward our
@@ -896,7 +893,6 @@ def start_mavproxy(opts, stuff):
                     cmd.extend(["--out", str(wsl2_host_ip_str) + ":" + str(port)])
                 else:
                     cmd.extend(["--out", "127.0.0.1:" + str(port)])
-
         if not opts.mcast:
             if opts.udp:
                 cmd.extend(["--master", ":" + str(5760 + 10 * i)])
@@ -908,10 +904,7 @@ def start_mavproxy(opts, stuff):
     if opts.tracker:
         cmd.extend(["--load-module", "tracker"])
         # tracker_serial0 is set when we start the tracker...
-        extra_cmd += ("module load map;"
-                      "tracker set port %s; "
-                      "tracker start; "
-                      "tracker arm;" % (tracker_serial0,))
+        extra_cmd += "module load map;" "tracker set port %s; " "tracker start; " "tracker arm;" % (tracker_serial0,)
 
     if opts.mavlink_gimbal:
         cmd.extend(["--load-module", "gimbal"])
@@ -928,7 +921,7 @@ def start_mavproxy(opts, stuff):
         for i, x in enumerate(mavargs):
             if '=' in x:
                 mavargs[i] = x.split('=')[0]
-                mavargs.insert(i+1, x.split('=')[1])
+                mavargs.insert(i + 1, x.split('=')[1])
         # Use this flag to tell if parsing character inbetween a pair
         # of quotation marks
         inString = False
@@ -948,9 +941,9 @@ def start_mavproxy(opts, stuff):
                 mavargs[i] = x[:-1]
         # Replace the list items with one string to be passed into mavproxy
         for begin, end in zip(beginStringIndex, endStringIndex):
-            replacement = " ".join(mavargs[begin:end+1])
+            replacement = " ".join(mavargs[begin : end + 1])
             mavargs[begin] = replacement
-            mavargs = mavargs[0:begin+1] + mavargs[end+1:]
+            mavargs = mavargs[0 : begin + 1] + mavargs[end + 1 :]
         cmd.extend(mavargs)
 
     # compatibility pass-through parameters (for those that don't want
@@ -978,8 +971,7 @@ def start_mavproxy(opts, stuff):
 
     # add Tools/mavproxy_modules to PYTHONPATH in autotest so we can
     # find random MAVProxy helper modules like sitl_calibration
-    local_mp_modules_dir = os.path.abspath(
-        os.path.join(__file__, '..', '..', 'mavproxy_modules'))
+    local_mp_modules_dir = os.path.abspath(os.path.join(__file__, '..', '..', 'mavproxy_modules'))
     env = dict(os.environ)
     old = env.get('PYTHONPATH', None)
     env['PYTHONPATH'] = local_mp_modules_dir
@@ -1020,7 +1012,7 @@ vehicle_map = {
     "Copter": "ArduCopter",
     "Plane": "ArduPlane",
     "Sub": "ArduSub",
-    "Blimp" : "Blimp",
+    "Blimp": "Blimp",
     "Rover": "Rover",
 }
 # add lower-case equivalents too
@@ -1035,7 +1027,8 @@ parser = CompatOptionParser(
     "simulated vehicle. Always start from the same directory. It is "
     "recommended that you start in the main vehicle directory for the vehicle "
     "you are simulating, for example, start in the ArduPlane directory to "
-    "simulate ArduPlane")
+    "simulate ArduPlane",
+)
 
 vehicle_choices = list(vinfo.options.keys())
 
@@ -1043,373 +1036,309 @@ vehicle_choices = list(vinfo.options.keys())
 for c in vehicle_map.keys():
     vehicle_choices.append(c)
 
-parser.add_option("-v", "--vehicle",
-                  type='choice',
-                  default=None,
-                  help="vehicle type (%s)" % vehicle_options_string,
-                  choices=vehicle_choices)
-parser.add_option("-f", "--frame", type='string', default=None, help="""set vehicle frame type
+parser.add_option(
+    "-v",
+    "--vehicle",
+    type='choice',
+    default=None,
+    help="vehicle type (%s)" % vehicle_options_string,
+    choices=vehicle_choices,
+)
+parser.add_option(
+    "-f",
+    "--frame",
+    type='string',
+    default=None,
+    help="""set vehicle frame type
 
-%s""" % (generate_frame_help()))
+%s"""
+    % (generate_frame_help()),
+)
 
-parser.add_option("--vehicle-binary",
-                  default=None,
-                  help="vehicle binary path")
+parser.add_option("--vehicle-binary", default=None, help="vehicle binary path")
 
-parser.add_option("-C", "--sim_vehicle_sh_compatible",
-                  action='store_true',
-                  default=False,
-                  help="be compatible with the way sim_vehicle.sh works; "
-                  "make this the first option")
+parser.add_option(
+    "-C",
+    "--sim_vehicle_sh_compatible",
+    action='store_true',
+    default=False,
+    help="be compatible with the way sim_vehicle.sh works; " "make this the first option",
+)
 
 group_build = optparse.OptionGroup(parser, "Build options")
-group_build.add_option("-N", "--no-rebuild",
-                       action='store_true',
-                       default=False,
-                       help="don't rebuild before starting ardupilot")
-group_build.add_option("--no-configure",
-                       action='store_true',
-                       default=False,
-                       help="don't run waf configure before building")
-group_build.add_option("-D", "--debug",
-                       action='store_true',
-                       default=False,
-                       help="build with debugging")
-group_build.add_option("-c", "--clean",
-                       action='store_true',
-                       default=False,
-                       help="do a make clean before building")
-group_build.add_option("-j", "--jobs",
-                       default=None,
-                       type='int',
-                       help="number of processors to use during build "
-                       "(default for waf : number of processor, for make : 1)")
-group_build.add_option("-b", "--build-target",
-                       default=None,
-                       type='string',
-                       help="override SITL build target")
-group_build.add_option("--enable-math-check-indexes",
-                       default=False,
-                       action="store_true",
-                       dest="math_check_indexes",
-                       help="enable checking of math indexes")
-group_build.add_option("", "--force-32bit",
-                       default=False,
-                       action='store_true',
-                       dest="force_32bit",
-                       help="compile sitl using 32-bit")
-group_build.add_option("", "--configure-define",
-                       default=[],
-                       action='append',
-                       dest="define",
-                       help="create a preprocessor define")
-group_build.add_option("", "--rebuild-on-failure",
-                       dest="rebuild_on_failure",
-                       action='store_true',
-                       default=False,
-                       help="if build fails, do not clean and rebuild")
-group_build.add_option("", "--waf-configure-arg",
-                       action="append",
-                       dest="waf_configure_args",
-                       type="string",
-                       default=[],
-                       help="extra arguments to pass to waf in configure step")
-group_build.add_option("", "--waf-build-arg",
-                       action="append",
-                       dest="waf_build_args",
-                       type="string",
-                       default=[],
-                       help="extra arguments to pass to waf in its build step")
-group_build.add_option("", "--coverage",
-                       action='store_true',
-                       default=False,
-                       help="use coverage build")
-group_build.add_option("", "--ubsan",
-                       default=False,
-                       action='store_true',
-                       dest="ubsan",
-                       help="compile sitl with undefined behaviour sanitiser")
-group_build.add_option("", "--ubsan-abort",
-                       default=False,
-                       action='store_true',
-                       dest="ubsan_abort",
-                       help="compile sitl with undefined behaviour sanitiser and abort on error")
-group_build.add_option("--num-aux-imus",
-                       dest="num_aux_imus",
-                       default=0,
-                       type='int',
-                       help='number of auxiliary IMUs to simulate')
+group_build.add_option(
+    "-N", "--no-rebuild", action='store_true', default=False, help="don't rebuild before starting ardupilot"
+)
+group_build.add_option(
+    "--no-configure", action='store_true', default=False, help="don't run waf configure before building"
+)
+group_build.add_option("-D", "--debug", action='store_true', default=False, help="build with debugging")
+group_build.add_option("-c", "--clean", action='store_true', default=False, help="do a make clean before building")
+group_build.add_option(
+    "-j",
+    "--jobs",
+    default=None,
+    type='int',
+    help="number of processors to use during build " "(default for waf : number of processor, for make : 1)",
+)
+group_build.add_option("-b", "--build-target", default=None, type='string', help="override SITL build target")
+group_build.add_option(
+    "--enable-math-check-indexes",
+    default=False,
+    action="store_true",
+    dest="math_check_indexes",
+    help="enable checking of math indexes",
+)
+group_build.add_option(
+    "", "--force-32bit", default=False, action='store_true', dest="force_32bit", help="compile sitl using 32-bit"
+)
+group_build.add_option(
+    "", "--configure-define", default=[], action='append', dest="define", help="create a preprocessor define"
+)
+group_build.add_option(
+    "",
+    "--rebuild-on-failure",
+    dest="rebuild_on_failure",
+    action='store_true',
+    default=False,
+    help="if build fails, do not clean and rebuild",
+)
+group_build.add_option(
+    "",
+    "--waf-configure-arg",
+    action="append",
+    dest="waf_configure_args",
+    type="string",
+    default=[],
+    help="extra arguments to pass to waf in configure step",
+)
+group_build.add_option(
+    "",
+    "--waf-build-arg",
+    action="append",
+    dest="waf_build_args",
+    type="string",
+    default=[],
+    help="extra arguments to pass to waf in its build step",
+)
+group_build.add_option("", "--coverage", action='store_true', default=False, help="use coverage build")
+group_build.add_option(
+    "",
+    "--ubsan",
+    default=False,
+    action='store_true',
+    dest="ubsan",
+    help="compile sitl with undefined behaviour sanitiser",
+)
+group_build.add_option(
+    "",
+    "--ubsan-abort",
+    default=False,
+    action='store_true',
+    dest="ubsan_abort",
+    help="compile sitl with undefined behaviour sanitiser and abort on error",
+)
+group_build.add_option(
+    "--num-aux-imus", dest="num_aux_imus", default=0, type='int', help='number of auxiliary IMUs to simulate'
+)
 parser.add_option_group(group_build)
 
 group_sim = optparse.OptionGroup(parser, "Simulation options")
-group_sim.add_option("-I", "--instance",
-                     default=0,
-                     type='int',
-                     help="instance of simulator")
-group_sim.add_option("-n", "--count",
-                     type='int',
-                     default=1,
-                     help="vehicle count; if this is specified, -I is used as a base-value")
-group_sim.add_option("-i", "--instances",
-                     default=None,
-                     type='string',
-                     help="a space delimited list of instances to spawn; if specified, overrides -I and -n.")
-group_sim.add_option("-V", "--valgrind",
-                     action='store_true',
-                     default=False,
-                     help="enable valgrind for memory access checking (slow!)")
-group_sim.add_option("", "--callgrind",
-                     action='store_true',
-                     default=False,
-                     help="enable valgrind for performance analysis (slow!!)")
-group_sim.add_option("-T", "--tracker",
-                     action='store_true',
-                     default=False,
-                     help="start an antenna tracker instance")
-group_sim.add_option("", "--enable-onvif",
-                     action="store_true",
-                     help="enable onvif camera control sim using AntennaTracker")
-group_sim.add_option("", "--can-peripherals",
-                     action='store_true',
-                     default=False,
-                     help="start a DroneCAN peripheral instance")
-group_sim.add_option("-A", "--sitl-instance-args",
-                     type='string',
-                     default=None,
-                     help="pass arguments to SITL instance")
-group_sim.add_option("-G", "--gdb",
-                     action='store_true',
-                     default=False,
-                     help="use gdb for debugging ardupilot")
-group_sim.add_option("-g", "--gdb-stopped",
-                     action='store_true',
-                     default=False,
-                     help="use gdb for debugging ardupilot (no auto-start)")
-group_sim.add_option("--lldb",
-                     action='store_true',
-                     default=False,
-                     help="use lldb for debugging ardupilot")
-group_sim.add_option("--lldb-stopped",
-                     action='store_true',
-                     default=False,
-                     help="use ldb for debugging ardupilot (no auto-start)")
-group_sim.add_option("-d", "--delay-start",
-                     default=0,
-                     type='float',
-                     help="delay start of mavproxy by this number of seconds")
-group_sim.add_option("-B", "--breakpoint",
-                     type='string',
-                     action="append",
-                     default=[],
-                     help="add a breakpoint at given location in debugger")
-group_sim.add_option("--disable-breakpoints",
-                     default=False,
-                     action='store_true',
-                     help="disable all breakpoints before starting")
-group_sim.add_option("-M", "--mavlink-gimbal",
-                     action='store_true',
-                     default=False,
-                     help="enable MAVLink gimbal")
-group_sim.add_option("-L", "--location", type='string',
-                     default=None,
-                     help="use start location from "
-                     "Tools/autotest/locations.txt")
-group_sim.add_option("-l", "--custom-location",
-                     type='string',
-                     default=None,
-                     help="set custom start location (lat,lon,alt,heading)")
-group_sim.add_option("-S", "--speedup",
-                     default=1,
-                     type='int',
-                     help="set simulation speedup (1 for wall clock time)")
-group_sim.add_option("-t", "--tracker-location",
-                     default='CMAC_PILOTSBOX',
-                     type='string',
-                     help="set antenna tracker start location")
-group_sim.add_option("-w", "--wipe-eeprom",
-                     action='store_true',
-                     default=False, help="wipe EEPROM and reload parameters")
-group_sim.add_option("-m", "--mavproxy-args",
-                     default=None,
-                     type='string',
-                     help="additional arguments to pass to mavproxy.py")
-group_sim.add_option("", "--scrimmage-args",
-                     default=None,
-                     type='string',
-                     help="arguments used to populate SCRIMMAGE mission (comma-separated). "
-                     "Currently visual_model, motion_model, and terrain are supported. "
-                     "Usage: [instance=]argument=value...")
-group_sim.add_option("", "--strace",
-                     action='store_true',
-                     default=False,
-                     help="strace the ArduPilot binary")
-group_sim.add_option("", "--model",
-                     type='string',
-                     default=None,
-                     help="Override simulation model to use")
-group_sim.add_option("", "--use-dir",
-                     type='string',
-                     default=None,
-                     help="Store SITL state and output in named directory")
-group_sim.add_option("", "--no-mavproxy",
-                     action='store_true',
-                     default=False,
-                     help="Don't launch MAVProxy")
-group_sim.add_option("", "--fresh-params",
-                     action='store_true',
-                     dest='fresh_params',
-                     default=False,
-                     help="Generate and use local parameter help XML")
-group_sim.add_option("", "--mcast",
-                     action="store_true",
-                     default=False,
-                     help="Use multicasting at default 239.255.145.50:14550")
-group_sim.add_option("", "--udp",
-                     action="store_true",
-                     default=False,
-                     help="Use UDP on 127.0.0.1:5760")
-group_sim.add_option("", "--osd",
-                     action='store_true',
-                     dest='OSD',
-                     default=False,
-                     help="Enable SITL OSD")
-group_sim.add_option("", "--osdmsp",
-                     action='store_true',
-                     dest='OSDMSP',
-                     default=False,
-                     help="Enable SITL OSD using MSP")
-group_sim.add_option("", "--tonealarm",
-                     action='store_true',
-                     dest='tonealarm',
-                     default=False,
-                     help="Enable SITL ToneAlarm")
-group_sim.add_option("", "--rgbled",
-                     action='store_true',
-                     dest='rgbled',
-                     default=False,
-                     help="Enable SITL RGBLed")
-group_sim.add_option("", "--add-param-file",
-                     type='string',
-                     action="append",
-                     default=None,
-                     help="Add a parameters file to use")
-group_sim.add_option("", "--no-extra-ports",
-                     action='store_true',
-                     dest='no_extra_ports',
-                     default=False,
-                     help="Disable setup of UDP 14550 and 14551 output")
-group_sim.add_option("", "--no-wsl2-network",
-                     action='store_true',
-                     dest='no_wsl2_network',
-                     default=False,
-                     help="Disable setup of WSL2 network for output")
-group_sim.add_option("-Z", "--swarm",
-                     type='string',
-                     default=None,
-                     help="Specify path of swarminit.txt for shifting spawn location")
-group_sim.add_option("", "--auto-offset-line",
-                     type="string",
-                     default=None,
-                     help="Argument of form  BEARING,DISTANCE.  When running multiple instances, form a line along bearing with an interval of DISTANCE",  # NOQA
-                     )
-group_sim.add_option("--flash-storage",
-                     action='store_true',
-                     help="use flash storage emulation")
-group_sim.add_option("--fram-storage",
-                     action='store_true',
-                     help="use fram storage emulation")
-group_sim.add_option("--enable-ekf2",
-                     action='store_true',
-                     help="disable EKF2 in build")
-group_sim.add_option("--disable-ekf3",
-                     action='store_true',
-                     help="disable EKF3 in build")
-group_sim.add_option("", "--start-time",
-                     default=None,
-                     type='string',
-                     help="specify simulation start time in format YYYY-MM-DD-HH:MM in your local time zone")
-group_sim.add_option("", "--sysid",
-                     type='int',
-                     default=None,
-                     help="Set MAV_SYSID")
-group_sim.add_option("--postype-single",
-                     action='store_true',
-                     help="force single precision postype_t")
-group_sim.add_option("--ekf-double",
-                     action='store_true',
-                     help="use double precision in EKF")
-group_sim.add_option("--ekf-single",
-                     action='store_true',
-                     help="use single precision in EKF")
-group_sim.add_option("", "--slave",
-                     type='int',
-                     default=0,
-                     help="Set the number of JSON slave")
-group_sim.add_option("", "--auto-sysid",
-                     default=False,
-                     action='store_true',
-                     help="Set MAV_SYSID based upon instance number")
-group_sim.add_option("", "--sim-address",
-                     type=str,
-                     default="127.0.0.1",
-                     help="IP address of the simulator. Defaults to localhost")
-group_sim.add_option("--enable-dds", action='store_true',
-                     help="Enable the dds client to connect with ROS2/DDS")
-group_sim.add_option("--disable-networking", action='store_true',
-                     help="Disable networking APIs")
-group_sim.add_option("--enable-ppp", action='store_true',
-                     help="Enable PPP networking")
-group_sim.add_option("--enable-networking-tests", action='store_true',
-                     help="Enable networking tests")
-group_sim.add_option("--enable-fgview", action='store_true',
-                     help="Enable FlightGear output")
+group_sim.add_option("-I", "--instance", default=0, type='int', help="instance of simulator")
+group_sim.add_option(
+    "-n", "--count", type='int', default=1, help="vehicle count; if this is specified, -I is used as a base-value"
+)
+group_sim.add_option(
+    "-i",
+    "--instances",
+    default=None,
+    type='string',
+    help="a space delimited list of instances to spawn; if specified, overrides -I and -n.",
+)
+group_sim.add_option(
+    "-V", "--valgrind", action='store_true', default=False, help="enable valgrind for memory access checking (slow!)"
+)
+group_sim.add_option(
+    "", "--callgrind", action='store_true', default=False, help="enable valgrind for performance analysis (slow!!)"
+)
+group_sim.add_option("-T", "--tracker", action='store_true', default=False, help="start an antenna tracker instance")
+group_sim.add_option(
+    "", "--enable-onvif", action="store_true", help="enable onvif camera control sim using AntennaTracker"
+)
+group_sim.add_option(
+    "", "--can-peripherals", action='store_true', default=False, help="start a DroneCAN peripheral instance"
+)
+group_sim.add_option("-A", "--sitl-instance-args", type='string', default=None, help="pass arguments to SITL instance")
+group_sim.add_option("-G", "--gdb", action='store_true', default=False, help="use gdb for debugging ardupilot")
+group_sim.add_option(
+    "-g", "--gdb-stopped", action='store_true', default=False, help="use gdb for debugging ardupilot (no auto-start)"
+)
+group_sim.add_option("--lldb", action='store_true', default=False, help="use lldb for debugging ardupilot")
+group_sim.add_option(
+    "--lldb-stopped", action='store_true', default=False, help="use ldb for debugging ardupilot (no auto-start)"
+)
+group_sim.add_option(
+    "-d", "--delay-start", default=0, type='float', help="delay start of mavproxy by this number of seconds"
+)
+group_sim.add_option(
+    "-B",
+    "--breakpoint",
+    type='string',
+    action="append",
+    default=[],
+    help="add a breakpoint at given location in debugger",
+)
+group_sim.add_option(
+    "--disable-breakpoints", default=False, action='store_true', help="disable all breakpoints before starting"
+)
+group_sim.add_option("-M", "--mavlink-gimbal", action='store_true', default=False, help="enable MAVLink gimbal")
+group_sim.add_option(
+    "-L", "--location", type='string', default=None, help="use start location from " "Tools/autotest/locations.txt"
+)
+group_sim.add_option(
+    "-l", "--custom-location", type='string', default=None, help="set custom start location (lat,lon,alt,heading)"
+)
+group_sim.add_option("-S", "--speedup", default=1, type='int', help="set simulation speedup (1 for wall clock time)")
+group_sim.add_option(
+    "-t", "--tracker-location", default='CMAC_PILOTSBOX', type='string', help="set antenna tracker start location"
+)
+group_sim.add_option(
+    "-w", "--wipe-eeprom", action='store_true', default=False, help="wipe EEPROM and reload parameters"
+)
+group_sim.add_option(
+    "-m", "--mavproxy-args", default=None, type='string', help="additional arguments to pass to mavproxy.py"
+)
+group_sim.add_option(
+    "",
+    "--scrimmage-args",
+    default=None,
+    type='string',
+    help="arguments used to populate SCRIMMAGE mission (comma-separated). "
+    "Currently visual_model, motion_model, and terrain are supported. "
+    "Usage: [instance=]argument=value...",
+)
+group_sim.add_option("", "--strace", action='store_true', default=False, help="strace the ArduPilot binary")
+group_sim.add_option("", "--model", type='string', default=None, help="Override simulation model to use")
+group_sim.add_option(
+    "", "--use-dir", type='string', default=None, help="Store SITL state and output in named directory"
+)
+group_sim.add_option("", "--no-mavproxy", action='store_true', default=False, help="Don't launch MAVProxy")
+group_sim.add_option(
+    "",
+    "--fresh-params",
+    action='store_true',
+    dest='fresh_params',
+    default=False,
+    help="Generate and use local parameter help XML",
+)
+group_sim.add_option(
+    "", "--mcast", action="store_true", default=False, help="Use multicasting at default 239.255.145.50:14550"
+)
+group_sim.add_option("", "--udp", action="store_true", default=False, help="Use UDP on 127.0.0.1:5760")
+group_sim.add_option("", "--osd", action='store_true', dest='OSD', default=False, help="Enable SITL OSD")
+group_sim.add_option(
+    "", "--osdmsp", action='store_true', dest='OSDMSP', default=False, help="Enable SITL OSD using MSP"
+)
+group_sim.add_option(
+    "", "--tonealarm", action='store_true', dest='tonealarm', default=False, help="Enable SITL ToneAlarm"
+)
+group_sim.add_option("", "--rgbled", action='store_true', dest='rgbled', default=False, help="Enable SITL RGBLed")
+group_sim.add_option(
+    "", "--add-param-file", type='string', action="append", default=None, help="Add a parameters file to use"
+)
+group_sim.add_option(
+    "",
+    "--no-extra-ports",
+    action='store_true',
+    dest='no_extra_ports',
+    default=False,
+    help="Disable setup of UDP 14550 and 14551 output",
+)
+
+group_sim.add_option(
+    "",
+    "--no-extra-14550-ports",
+    action='store_true',
+    dest='no_extra_14550_ports',
+    default=False,
+    help="Disable setup of UDP 14550 output",
+)
+
+group_sim.add_option(
+    "",
+    "--no-extra-14551-ports",
+    action='store_true',
+    dest='no_extra_14551_ports',
+    default=False,
+    help="Disable setup of UDP 14551 output",
+)
+
+
+group_sim.add_option(
+    "",
+    "--no-wsl2-network",
+    action='store_true',
+    dest='no_wsl2_network',
+    default=False,
+    help="Disable setup of WSL2 network for output",
+)
+group_sim.add_option(
+    "-Z", "--swarm", type='string', default=None, help="Specify path of swarminit.txt for shifting spawn location"
+)
+group_sim.add_option(
+    "",
+    "--auto-offset-line",
+    type="string",
+    default=None,
+    help="Argument of form  BEARING,DISTANCE.  When running multiple instances, form a line along bearing with an interval of DISTANCE",  # NOQA
+)
+group_sim.add_option("--flash-storage", action='store_true', help="use flash storage emulation")
+group_sim.add_option("--fram-storage", action='store_true', help="use fram storage emulation")
+group_sim.add_option("--enable-ekf2", action='store_true', help="disable EKF2 in build")
+group_sim.add_option("--disable-ekf3", action='store_true', help="disable EKF3 in build")
+group_sim.add_option(
+    "",
+    "--start-time",
+    default=None,
+    type='string',
+    help="specify simulation start time in format YYYY-MM-DD-HH:MM in your local time zone",
+)
+group_sim.add_option("", "--sysid", type='int', default=None, help="Set MAV_SYSID")
+group_sim.add_option("--postype-single", action='store_true', help="force single precision postype_t")
+group_sim.add_option("--ekf-double", action='store_true', help="use double precision in EKF")
+group_sim.add_option("--ekf-single", action='store_true', help="use single precision in EKF")
+group_sim.add_option("", "--slave", type='int', default=0, help="Set the number of JSON slave")
+group_sim.add_option(
+    "", "--auto-sysid", default=False, action='store_true', help="Set MAV_SYSID based upon instance number"
+)
+group_sim.add_option(
+    "", "--sim-address", type=str, default="127.0.0.1", help="IP address of the simulator. Defaults to localhost"
+)
+group_sim.add_option("--enable-dds", action='store_true', help="Enable the dds client to connect with ROS2/DDS")
+group_sim.add_option("--disable-networking", action='store_true', help="Disable networking APIs")
+group_sim.add_option("--enable-ppp", action='store_true', help="Enable PPP networking")
+group_sim.add_option("--enable-networking-tests", action='store_true', help="Enable networking tests")
+group_sim.add_option("--enable-fgview", action='store_true', help="Enable FlightGear output")
 
 parser.add_option_group(group_sim)
 
 
 # special-cased parameters for mavproxy, because some people's fingers
 # have long memories, and they don't want to use -C :-)
-group = optparse.OptionGroup(parser,
-                             "Compatibility MAVProxy options "
-                             "(consider using --mavproxy-args instead)")
-group.add_option("", "--out",
-                 default=[],
-                 type='string',
-                 action="append",
-                 help="create an additional mavlink output")
-group.add_option("", "--map",
-                 default=False,
-                 action='store_true',
-                 help="load map module on startup")
-group.add_option("", "--mavcesium",
-                 default=False,
-                 action='store_true',
-                 help="load MAVCesium module on startup")
+group = optparse.OptionGroup(parser, "Compatibility MAVProxy options " "(consider using --mavproxy-args instead)")
+group.add_option("", "--out", default=[], type='string', action="append", help="create an additional mavlink output")
+group.add_option("", "--map", default=False, action='store_true', help="load map module on startup")
+group.add_option("", "--mavcesium", default=False, action='store_true', help="load MAVCesium module on startup")
 
-group.add_option("", "--console",
-                 default=False,
-                 action='store_true',
-                 help="load console module on startup")
-group.add_option("", "--aircraft",
-                 default=None,
-                 help="store state and logs in named directory")
-group.add_option("", "--moddebug",
-                 default=0,
-                 type=int,
-                 help="mavproxy module debug")
-group.add_option("", "--no-rcin",
-                 action='store_true',
-                 help="disable mavproxy rcin")
+group.add_option("", "--console", default=False, action='store_true', help="load console module on startup")
+group.add_option("", "--aircraft", default=None, help="store state and logs in named directory")
+group.add_option("", "--moddebug", default=0, type=int, help="mavproxy module debug")
+group.add_option("", "--no-rcin", action='store_true', help="disable mavproxy rcin")
 parser.add_option_group(group)
 
 group_completion = optparse.OptionGroup(parser, "Completion helpers")
-group_completion.add_option("", "--list-vehicle",
-                            action='store_true',
-                            help="List the vehicles")
-group_completion.add_option("", "--list-frame",
-                            type='string',
-                            default=None,
-                            help="List the vehicle frames")
+group_completion.add_option("", "--list-vehicle", action='store_true', help="List the vehicles")
+group_completion.add_option("", "--list-frame", type='string', default=None, help="List the vehicle frames")
 parser.add_option_group(group_completion)
 
 cmd_opts, cmd_args = parser.parse_args()
@@ -1490,20 +1419,21 @@ elif cmd_opts.vehicle.lower() in vehicle_map:
 
 # try to validate vehicle
 if cmd_opts.vehicle not in vinfo.options:
-    progress('''
+    progress(
+        '''
 ** Is (%s) really your vehicle type?
 Perhaps you could try -v %s
 You could also try changing directory to e.g. the ArduCopter subdirectory
-''' % (cmd_opts.vehicle, vehicle_options_string))
+'''
+        % (cmd_opts.vehicle, vehicle_options_string)
+    )
     sys.exit(1)
 
 # determine frame options (e.g. build type might be "sitl")
 if cmd_opts.frame is None:
     cmd_opts.frame = vinfo.options[cmd_opts.vehicle]["default_frame"]
 
-frame_infos = vinfo.options_for_frame(cmd_opts.frame,
-                                      cmd_opts.vehicle,
-                                      cmd_opts)
+frame_infos = vinfo.options_for_frame(cmd_opts.frame, cmd_opts.vehicle, cmd_opts)
 
 vehicle_dir = os.path.realpath(os.path.join(root_dir, cmd_opts.vehicle))
 if not os.path.exists(vehicle_dir):
@@ -1518,7 +1448,7 @@ if cmd_opts.instances is not None:
             print("May not specify a negative instance ID")
             sys.exit(1)
         instances.add(i)
-    instances = sorted(instances) # to list
+    instances = sorted(instances)  # to list
 else:
     instances = range(cmd_opts.instance, cmd_opts.instance + cmd_opts.count)
 
@@ -1551,7 +1481,7 @@ elif cmd_opts.auto_offset_line is not None:
     dist = 0
     offsets = {}
     for x in instances:
-        offsets[x] = [dist*math.sin(math.radians(bearing)), dist*math.cos(math.radians(bearing)), 0, 0]
+        offsets[x] = [dist * math.sin(math.radians(bearing)), dist * math.cos(math.radians(bearing)), 0, 0]
         dist += metres
 else:
     offsets = {x: [0.0, 0.0, 0.0, None] for x in instances}
@@ -1595,18 +1525,13 @@ if True:
         vehicle_binary = cmd_opts.vehicle_binary
     else:
         binary_basedir = "build/sitl"
-        vehicle_binary = os.path.join(root_dir,
-                                      binary_basedir,
-                                      frame_infos["waf_target"])
+        vehicle_binary = os.path.join(root_dir, binary_basedir, frame_infos["waf_target"])
 
     if not os.path.exists(vehicle_binary):
         print("Vehicle binary (%s) does not exist" % (vehicle_binary,))
         sys.exit(1)
 
-    start_vehicle(vehicle_binary,
-                  cmd_opts,
-                  frame_infos,
-                  spawns=spawns)
+    start_vehicle(vehicle_binary, cmd_opts, frame_infos, spawns=spawns)
 
 
 if cmd_opts.delay_start:
@@ -1618,6 +1543,7 @@ if cmd_opts.frame in ['scrimmage-plane', 'scrimmage-copter']:
     # import only here so as to avoid jinja dependency in whole script
     from jinja2 import Environment, FileSystemLoader
     from tempfile import mkstemp
+
     entities = []
     config = {}
     config['plane'] = cmd_opts.vehicle == 'ArduPlane'
@@ -1629,10 +1555,13 @@ if cmd_opts.frame in ['scrimmage-plane', 'scrimmage-copter']:
     for i in instances:
         (x, y, z, heading) = offsets[i]
         entities[i] = {
-            'x': x, 'y': y, 'z': z, 'heading': heading,
+            'x': x,
+            'y': y,
+            'z': z,
+            'heading': heading,
             'to_ardupilot_port': 9003 + i * 10,
             'from_ardupilot_port': 9002 + i * 10,
-            'to_ardupilot_ip': '127.0.0.1'
+            'to_ardupilot_ip': '127.0.0.1',
         }
     if cmd_opts.scrimmage_args is not None:
         scrimmage_args = cmd_opts.scrimmage_args.split(',')
@@ -1674,6 +1603,7 @@ if cmd_opts.delay_start:
 
 try:
     if cmd_opts.no_mavproxy:
+        # start_custom_gcs(cmd_opts)
         time.sleep(3)  # output our message after run_in_terminal_window.sh's
         progress("Waiting for SITL to exit")
         wait_unlimited()
