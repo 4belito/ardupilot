@@ -648,7 +648,7 @@ def start_antenna_tracker(opts):
     tracker_instance = 1
     oldpwd = os.getcwd()
     os.chdir(vehicledir)
-    tracker_serial0 = "tcp:127.0.0.1:" + str(5760 + 10 * tracker_instance)
+    tracker_serial0 = "tcp:127.0.0.1:" + str(5760 + opts.port_offset)
     binary_basedir = "build/sitl"
     exe = os.path.join(root_dir, binary_basedir, "bin/antennatracker")
     run_in_terminal_window(
@@ -767,6 +767,8 @@ def start_vehicle(binary, opts, stuff, spawns=None):
     cmd.extend(["--speedup", str(opts.speedup)])
     if opts.sysid is not None:
         cmd.extend(["--sysid", str(opts.sysid)])
+    if opts.port_offset is not None:
+        cmd.extend(["--base-port", str(5760 + opts.port_offset)])
     if opts.slave is not None:
         cmd.extend(["--slave", str(opts.slave)])
     if opts.enable_fgview:
@@ -837,7 +839,7 @@ def start_vehicle(binary, opts, stuff, spawns=None):
         if opts.mcast:
             c.extend(["--serial0", "mcast:"])
         elif opts.udp:
-            c.extend(["--serial0", "udpclient:127.0.0.1:" + str(5760 + i * 10)])
+            c.extend(["--serial0", "udpclient:127.0.0.1:" + str(5760 + opts.port_offset)])
         if opts.auto_sysid:
             if opts.sysid is not None:
                 raise ValueError("Can't use auto-sysid and sysid together")
@@ -848,7 +850,10 @@ def start_vehicle(binary, opts, stuff, spawns=None):
             c.extend(["--sysid", str(sysid)])
         # c.extend(["--serial1", "udp:127.0.0.1:" + str(14550 + i * 10)])
         os.chdir(i_dir)
-        run_in_terminal_window(cmd_name, cmd + c)
+        if opts.terminal:
+            run_in_terminal_window(cmd_name, cmd + c)
+        else:
+            subprocess.Popen(cmd + c)
     os.chdir(old_dir)
 
 
@@ -895,9 +900,9 @@ def start_mavproxy(opts, stuff):
                     cmd.extend(["--out", "127.0.0.1:" + str(port)])
         if not opts.mcast:
             if opts.udp:
-                cmd.extend(["--master", ":" + str(5760 + 10 * i)])
+                cmd.extend(["--master", ":" + str(5760 + opts.port_offset)])
             else:
-                cmd.extend(["--master", "tcp:127.0.0.1:" + str(5760 + 10 * i)])
+                cmd.extend(["--master", "tcp:127.0.0.1:" + str(5760 + opts.port_offset)])
         if stuff["sitl-port"] and not opts.no_rcin:
             cmd.extend(["--sitl", "127.0.0.1:" + str(5501 + 10 * i)])
 
@@ -1035,6 +1040,21 @@ vehicle_choices = list(vinfo.options.keys())
 # add vehicle aliases to argument parser options:
 for c in vehicle_map.keys():
     vehicle_choices.append(c)
+
+parser.add_option(
+    "--port-offset",
+    type='int',
+    required=True,
+    help="port to use for the simulated vehicle (default 5760); "
+         "if you are running multiple vehicles, this is the base port "
+)
+
+parser.add_option(
+    "--terminal",
+    action='store_true',
+    default=False,
+    help="run the vehicle in a terminal window (default: no terminal window)",
+)
 
 parser.add_option(
     "-v",
@@ -1234,7 +1254,7 @@ group_sim.add_option(
 group_sim.add_option(
     "", "--mcast", action="store_true", default=False, help="Use multicasting at default 239.255.145.50:14550"
 )
-group_sim.add_option("", "--udp", action="store_true", default=False, help="Use UDP on 127.0.0.1:5760")
+group_sim.add_option("", "--udp", action="store_true", default=False, help="Use UDP on 127.0.0.1:<port>")
 group_sim.add_option("", "--osd", action='store_true', dest='OSD', default=False, help="Enable SITL OSD")
 group_sim.add_option(
     "", "--osdmsp", action='store_true', dest='OSDMSP', default=False, help="Enable SITL OSD using MSP"
