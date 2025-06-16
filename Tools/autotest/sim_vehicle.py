@@ -648,7 +648,7 @@ def start_antenna_tracker(opts):
     tracker_instance = 1
     oldpwd = os.getcwd()
     os.chdir(vehicledir)
-    tracker_serial0 = "tcp:127.0.0.1:" + str(5760 + opts.port_offset)
+    tracker_serial0 = "tcp:127.0.0.1:" + str(5760 + (opts.port_offset if opts.port_offset is not None else 10 * tracker_instance))
     binary_basedir = "build/sitl"
     exe = os.path.join(root_dir, binary_basedir, "bin/antennatracker")
     run_in_terminal_window(
@@ -839,7 +839,7 @@ def start_vehicle(binary, opts, stuff, spawns=None):
         if opts.mcast:
             c.extend(["--serial0", "mcast:"])
         elif opts.udp:
-            c.extend(["--serial0", "udpclient:127.0.0.1:" + str(5760 + opts.port_offset)])
+            c.extend(["--serial0", "udpclient:127.0.0.1:" + str(5760 + (opts.port_offset if opts.port_offset is not None else i * 10))])
         if opts.auto_sysid:
             if opts.sysid is not None:
                 raise ValueError("Can't use auto-sysid and sysid together")
@@ -900,9 +900,9 @@ def start_mavproxy(opts, stuff):
                     cmd.extend(["--out", "127.0.0.1:" + str(port)])
         if not opts.mcast:
             if opts.udp:
-                cmd.extend(["--master", ":" + str(5760 + opts.port_offset)])
+                cmd.extend(["--master", ":" + str(5760 + (opts.port_offset if opts.port_offset is not None else 10 *i))])
             else:
-                cmd.extend(["--master", "tcp:127.0.0.1:" + str(5760 + opts.port_offset)])
+                cmd.extend(["--master", "tcp:127.0.0.1:" + str(5760 + (opts.port_offset if opts.port_offset is not None else 10 * i))])
         if stuff["sitl-port"] and not opts.no_rcin:
             cmd.extend(["--sitl", "127.0.0.1:" + str(5501 + 10 * i)])
 
@@ -1044,7 +1044,7 @@ for c in vehicle_map.keys():
 parser.add_option(
     "--port-offset",
     type='int',
-    required=True,
+    default=None,
     help="port to use for the simulated vehicle (default 5760); "
          "if you are running multiple vehicles, this is the base port "
 )
