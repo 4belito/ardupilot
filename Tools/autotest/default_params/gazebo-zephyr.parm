@@ -17,4 +17,31 @@ INS_ACC2SCAL_Y   1.001
 INS_ACC2SCAL_Z   1.001
 INS_GYR_CAL      0
 ARSPD_TYPE 0
+ARSPD_USE 0
+AIRSPEED_CRUISE 11
 BATT_MONITOR    4
+ROLL_LIMIT_DEG 20
+
+# TECS: use pitch for altitude, throttle for speed (standard mode)
+# SPDWEIGHT=2.0 was causing pitch-up manoeuvres to bleed excess speed at the TAKEOFF->cruise
+# transition, directly triggering the phugoid. SPDWEIGHT=0.5 keeps pitch on altitude.
+TECS_SPDWEIGHT 0.5
+# TECS_PTCH_DAMP=3.0 was WRONG: at 20 deg/s pitch rate, the damping term was 3.0*(20*pi/180)=1.05 rad=60 deg
+# of pitch overcorrection -- self-exciting oscillation rather than damping. Default=0 is correct.
+TECS_PTCH_DAMP 0.0
+TECS_PITCH_MAX 15
+TECS_PITCH_MIN -10
+TECS_CLMB_MAX 5.0
+# Hard pitch attitude limits
+PTCH_LIM_MAX_DEG 15
+PTCH_LIM_MIN_DEG -10
+# Default THR_SLEWRATE=100. 15 was too slow for TECS to close the energy loop, causing pitch hunting.
+THR_SLEWRATE 100
+# Allow full unrestricted throttle during TAKEOFF
+TKOFF_THR_SLEW -1
+TECS_INTEG_GAIN 0.15
+
+# Pitch angle->rate controller: slew-rate limits prevent overshoot at TAKEOFF->AUTO transition
+PTCH2SRV_TCONST  0.8
+PTCH2SRV_RMAX_UP 20
+PTCH2SRV_RMAX_DN 20
