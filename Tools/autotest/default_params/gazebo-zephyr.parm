@@ -20,7 +20,15 @@ ARSPD_TYPE 0
 ARSPD_USE 0
 AIRSPEED_CRUISE 11
 BATT_MONITOR    4
-ROLL_LIMIT_DEG 20
+# Without an airspeed sensor TECS disables speed control (SKE_weighting=0).
+# SYNAIRSPEED uses GPS groundspeed as a synthetic estimate so TECS can regulate
+# speed without a real sensor and without injecting fake wind into the EKF.
+TECS_SYNAIRSPEED 1
+# Base throttle for TECS cruise. 45% (default) gives ~9-10 m/s on Zephyr;
+# 60% centres the throttle range around 12 m/s so TECS can modulate both ways.
+TRIM_THROTTLE 60
+# 45° gives min turn radius ~15 m at 12 m/s vs ~81 m at the default 20°.
+ROLL_LIMIT_DEG 45
 
 # TECS: use pitch for altitude, throttle for speed (standard mode)
 # SPDWEIGHT=2.0 was causing pitch-up manoeuvres to bleed excess speed at the TAKEOFF->cruise
