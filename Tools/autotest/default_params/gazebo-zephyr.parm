@@ -53,3 +53,18 @@ TECS_INTEG_GAIN 0.15
 PTCH2SRV_TCONST  0.8
 PTCH2SRV_RMAX_UP 20
 PTCH2SRV_RMAX_DN 20
+
+
+# Explicitly define the throttle channel
+SERVO3_FUNCTION 70
+# Ensure the "Off" PWM is 1000
+SERVO3_MIN 1000
+SERVO3_TRIM 1000
+SERVO3_MAX 2000
+
+# Prevent the motor from spinning at idle when armed
+THR_MIN 0
+# Ensure throttle is suppressed on the ground
+THR_PASS_STAB 0
+# Recommended: don't allow any throttle until the plane is ready
+TKOFF_THR_MINACC 0
