@@ -1,4 +1,82 @@
+# --- Standardized Small UAV Profile: Zephyr ---
+
+# 1. Control Logic (The "Elevon Bridge")
 SERVO1_FUNCTION 78
 SERVO2_FUNCTION 77
 SERVO1_REVERSED 1
 SERVO2_REVERSED 1
+
+# 2. Sensors & Hardware
+# No physical airspeed sensor in simulation — use synthetic groundspeed estimate
+ARSPD_TYPE 0
+ARSPD_USE  0
+BATT_MONITOR 4
+# Small INS offsets so the IMU is recognised as calibrated (SITL requirement)
+INS_ACCOFFS_X  0.001
+INS_ACCOFFS_Y  0.001
+INS_ACCOFFS_Z  0.001
+INS_ACCSCAL_X  1.001
+INS_ACCSCAL_Y  1.001
+INS_ACCSCAL_Z  1.001
+INS_ACC2OFFS_X 0.001
+INS_ACC2OFFS_Y 0.001
+INS_ACC2OFFS_Z 0.001
+INS_ACC2SCAL_X 1.001
+INS_ACC2SCAL_Y 1.001
+INS_ACC2SCAL_Z 1.001
+INS_GYR_CAL    0
+
+# 3. Flight Envelope (The "Physics")
+# 11 m/s matches Gazebo physics and prevents overshoots
+AIRSPEED_CRUISE 11
+AIRSPEED_MIN    9
+AIRSPEED_MAX    18
+TRIM_THROTTLE   60
+
+# 4. Maneuverability
+# 45 deg limit gives a realistic turn radius for this scale
+ROLL_LIMIT_DEG   45
+PTCH_LIM_MAX_DEG 15
+PTCH_LIM_MIN_DEG -10
+
+# 5. Navigation (L1 Guidance)
+# L1 lookahead = NAVL1_PERIOD × speed / (2π).
+# Zephyr minimum turn radius at 11 m/s and 45° bank ≈ V²/(g·tan45°) ≈ 12 m.
+# ArduPilot default period (17-25 s) → 30-44 m lookahead = 2.5-3× the turn radius →
+# plane cuts wide on waypoint transitions. Period=12 → 21 m lookahead ≈ 1.7× turn radius.
+NAVL1_PERIOD  12
+NAVL1_DAMPING 0.75
+# Accept the waypoint once within 20 m (~1.6× minimum turn radius)
+WP_RADIUS     20
+
+# 6. Energy Management (TECS)
+# SYNAIRSPEED uses GPS groundspeed so TECS can regulate speed without a real sensor
+TECS_SYNAIRSPEED 1
+# SPDWEIGHT 0.5 keeps pitch on altitude; throttle handles speed
+TECS_SPDWEIGHT   0.5
+# TECS_PTCH_DAMP must stay 0.0 — higher values cause self-exciting pitch oscillation
+TECS_PTCH_DAMP   0.0
+TECS_PITCH_MAX   15
+TECS_PITCH_MIN   -10
+TECS_CLMB_MAX    5.0
+TECS_INTEG_GAIN  0.15
+
+# 7. Pitch Controller
+# Slew-rate limits prevent overshoot at the TAKEOFF->AUTO transition
+PTCH2SRV_TCONST  0.8
+PTCH2SRV_RMAX_UP 20
+PTCH2SRV_RMAX_DN 20
+
+# 8. Throttle Channel
+SERVO3_FUNCTION  70
+SERVO3_MIN       1000
+SERVO3_TRIM      1000
+SERVO3_MAX       2000
+# No idle spin when armed; suppress throttle on the ground
+THR_MIN          0
+THR_PASS_STAB    0
+# Default slew rate (100) — 15 was too slow for TECS energy loop, caused pitch hunting
+THR_SLEWRATE     100
+# Allow unrestricted throttle during TAKEOFF
+TKOFF_THR_SLEW   -1
+TKOFF_THR_MINACC 0
