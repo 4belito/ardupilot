@@ -191,6 +191,14 @@ class VehicleInfo:
                         ],
                         "external": True,
                     },
+                    "copter-iris": {
+                        "model": "x:@ROMFS/models/iris.json",
+                        "waf_target": "bin/arducopter",
+                        "default_params_filename": [
+                            "default_params/copter.parm",
+                            "default_params/copter-iris.parm",
+                        ],
+                    },
                     "airsim-copter": {
                         "waf_target": "bin/arducopter",
                         "default_params_filename": [

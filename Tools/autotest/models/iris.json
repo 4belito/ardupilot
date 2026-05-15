@@ -1,0 +1,22 @@
+{
+    "mass": 1.9,
+    "diagonal_size": 0.494,
+    "hoverThrOut": 0.35,
+    "disc_area": 0.181,
+    "propExpo": 0.65,
+    "mdrag_coef": 0.2,
+    "refSpd": 15.08,
+    "refAngle": 45.0,
+    "refVoltage": 12.09,
+    "refCurrent": 19.0,
+    "refAlt": 0,
+    "refTempC": 25,
+    "refBatRes": 0.01,
+    "maxVoltage": 12.6,
+    "pwmMin": 1000,
+    "pwmMax": 2000,
+    "spin_min": 0.15,
+    "spin_max": 0.95,
+    "slew_max": 150,
+    "moment_inertia": [0.008, 0.015, 0.017]
+}

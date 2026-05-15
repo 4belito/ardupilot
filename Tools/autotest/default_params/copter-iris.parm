@@ -1,0 +1,30 @@
+# --- Standardized Small UAV Profile: Iris ---
+# SITL-only equivalent of gazebo-iris (no Gazebo required).
+# Loaded after copter.parm; overrides its values to match the Iris X-frame defaults.
+# Physics model: ardupilot/Tools/autotest/models/iris.json (mass=1.9kg, X-frame 494mm)
+
+# 1. Frame Layout
+# copter.parm sets FRAME_TYPE=0 (PLUS); Iris is X-frame — must override.
+FRAME_CLASS 1
+FRAME_TYPE  1
+
+# 2. Motor / Throttle Calibration
+# gazebo-iris hovers at ~34% throttle (vs copter.parm default 39%).
+# Matches iris.json hoverThrOut=0.35 and the 1.9 kg mass.
+MOT_THST_HOVER  0.35
+MOT_THST_EXPO   0.65
+
+# 3. Battery (3S LiPo — matches Gazebo iris battery plugin)
+MOT_BAT_VOLT_MAX 12.6
+MOT_BAT_VOLT_MIN 9.6
+
+# 4. EKF Drag Model
+# Estimated from SDF: mass=1.9 kg, disc_area≈0.181 m², Cd≈0.6 → bcoef=mass/(area*Cd)≈17.7
+# mdrag_coef=0.2 (default) → mcoef≈momentum_drag/(mass*airspeed)≈0.180
+EK3_DRAG_BCOEF_X  17.7
+EK3_DRAG_BCOEF_Y  17.7
+EK3_DRAG_MCOEF    0.180
+
+# Suppress geofence circle in QGC (copter.parm sets FENCE_RADIUS=150;
+# zero disables the circle; FENCE_ENABLE firmware default is already 0)
+FENCE_RADIUS 0
