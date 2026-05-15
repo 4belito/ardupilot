@@ -413,7 +413,7 @@ class VehicleInfo:
                         "default_params_filename": "default_params/plane-tailsitter.parm",
                     },
                     "plane-zephyr": {
-                        "model": "plane-elevon",
+                        "model": "plane-zephyr-elevon",
                         "waf_target": "bin/arduplane",
                         "default_params_filename": [
                             "models/plane.parm",

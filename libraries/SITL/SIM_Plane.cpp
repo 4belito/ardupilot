@@ -104,6 +104,22 @@ Plane::Plane(const char *frame_str) :
         mass = 2.0;
         coefficient.c_drag_p = 0.05;
     }
+
+    if (strstr(frame_str, "-zephyr")) {
+        // Aerodynamic coefficients matched to the Gazebo Zephyr LiftDragPlugin.
+        // Gazebo formula: CL = cla*(alpha + a0)  →  c_lift_0=cla*a0, c_lift_a=cla
+        // Mass from model.sdf: wing(1.5)+prop(0.05)+flap_l(0.1)+flap_r(0.1)+imu(0.15)=1.9 kg
+        mass = 1.9f;
+        thrust_scale = (mass * GRAVITY_MSS) / hover_throttle;
+        coefficient.s           = 0.50f;    // main wing area from LiftDragPlugin
+        coefficient.b           = 1.50f;    // wingspan estimated from model.sdf joint positions
+        coefficient.c           = 0.333f;   // mean chord = s/b
+        coefficient.c_lift_0    = 0.48f;    // cla*a0 = 3.7*0.13
+        coefficient.c_lift_a    = 3.7f;     // main-wing cla from LiftDragPlugin
+        coefficient.c_drag_p    = 0.064f;   // cda from LiftDragPlugin
+        coefficient.alpha_stall = 0.3391f;  // stall angle from LiftDragPlugin
+        coefficient.oswald      = 0.80f;    // lower efficiency for delta-wing AR≈4.5
+    }
 }
 
 /*
