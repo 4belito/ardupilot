@@ -54,6 +54,10 @@ NAVL1_DAMPING 0.75
 # models/plane.parm (also loaded for this frame) sets 50; not overriding to 90 caused
 # the SITL plane to start its turns ~60 m later than the Gazebo plane.
 WP_RADIUS     90
+# Loiter radius for DO_REPOSITION (GUIDED mode waypoints) and holding patterns.
+# Firmware default is 60 m (sized for large aircraft). At 11 m/s with 45° bank
+# the physical minimum is ~12 m; 20 m gives a comfortable margin (≈32° bank).
+WP_LOITER_RAD 20
 
 # 5b. Roll Controller
 # models/plane.parm (loaded before this file) sets RLL2SRV_TCONST=0.25 and RMAX=90.
@@ -94,3 +98,9 @@ THR_SLEWRATE     100
 # Allow unrestricted throttle during TAKEOFF
 TKOFF_THR_SLEW   -1
 TKOFF_THR_MINACC 0
+
+# 9. AUTOLAND geometry (sized for Zephyr at 11 m/s)
+# Default 400 m is designed for large aircraft; 150 m fits this scale.
+# WP_ALT chosen to maintain ≈7.5° glide slope (150 × tan 7.5° ≈ 20 m).
+AUTOLAND_WP_DIST 100
+AUTOLAND_WP_ALT  14

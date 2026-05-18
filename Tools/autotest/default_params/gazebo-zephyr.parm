@@ -68,3 +68,14 @@ THR_MIN 0
 THR_PASS_STAB 0
 # Recommended: don't allow any throttle until the plane is ready
 TKOFF_THR_MINACC 0
+
+# Loiter radius for DO_REPOSITION (GUIDED mode waypoints) and holding patterns.
+# Firmware default is 60 m. At 11 m/s with 45° bank the physical minimum is ~12 m;
+# 20 m gives a comfortable margin (≈32° bank).
+WP_LOITER_RAD 20
+
+# AUTOLAND geometry (sized for Zephyr at 11 m/s)
+# Default 400 m is designed for large aircraft; 150 m fits this scale.
+# WP_ALT chosen to maintain ≈7.5° glide slope (150 × tan 7.5° ≈ 20 m).
+AUTOLAND_WP_DIST 100
+AUTOLAND_WP_ALT  14
